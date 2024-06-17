@@ -1,0 +1,63 @@
+image: python:3.7.4-alpine3.10
+
+pipelines:
+  branches:
+    main:
+      - parallel:
+          steps:
+            - step:
+                services:
+                  - docker
+                caches:
+                  - pip
+                script:
+                  - pip3 install awscli
+                  - IMAGE="auth-service"
+                  - TAG=${BITBUCKET_BRANCH:-$BITBUCKET_TAG}
+                  - aws configure set aws_access_key_id "${AWS_KEY}"
+                  - aws configure set aws_secret_access_key "${AWS_SECRET}"
+                  - eval $(aws ecr get-login --no-include-email --region ap-south-1 | sed 's;https://;;g')
+                  - docker build -t $IMAGE .
+                  # use the pipe to push the image to AWS ECR
+                  - pipe: atlassian/aws-ecr-push-image:2.3.0
+                    variables:
+                      AWS_ACCESS_KEY_ID: $AWS_KEY
+                      AWS_SECRET_ACCESS_KEY: $AWS_SECRET
+                      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                      IMAGE_NAME: 'auth-service'
+                  - pipe: atlassian/aws-ecs-deploy:1.12.1
+                    variables:
+                      AWS_ACCESS_KEY_ID: $AWS_KEY
+                      AWS_SECRET_ACCESS_KEY: $AWS_SECRET
+                      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                      CLUSTER_NAME: 'ramp-dev'
+                      SERVICE_NAME: 'auth-service'
+                      FORCE_NEW_DEPLOYMENT: 'true'
+            - step:
+                services:
+                  - docker
+                caches:
+                  - pip
+                script:
+                  - pip3 install awscli
+                  - IMAGE='auth-service-rmq'
+                  - TAG=${BITBUCKET_BRANCH:-$BITBUCKET_TAG}
+                  - aws configure set aws_access_key_id "${AWS_KEY}"
+                  - aws configure set aws_secret_access_key "${AWS_SECRET}"
+                  - eval $(aws ecr get-login --no-include-email --region ap-south-1 | sed 's;https://;;g')
+                  - docker build -f Dockerfile.RMQ-Consumer -t $IMAGE .
+                  # use the pipe to push the image to AWS ECR
+                  - pipe: atlassian/aws-ecr-push-image:2.3.0
+                    variables:
+                      AWS_ACCESS_KEY_ID: $AWS_KEY
+                      AWS_SECRET_ACCESS_KEY: $AWS_SECRET
+                      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                      IMAGE_NAME: 'auth-service-rmq'
+                  - pipe: atlassian/aws-ecs-deploy:1.12.1
+                    variables:
+                      AWS_ACCESS_KEY_ID: $AWS_KEY
+                      AWS_SECRET_ACCESS_KEY: $AWS_SECRET
+                      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+                      CLUSTER_NAME: 'ramp-dev'
+                      SERVICE_NAME: 'auth-service-rmq'
+                      FORCE_NEW_DEPLOYMENT: 'true'
