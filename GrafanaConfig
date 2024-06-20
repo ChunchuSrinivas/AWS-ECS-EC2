@@ -1,0 +1,14 @@
+docker run -d -p 3000:3000 --env-file=/opt/grafana/grafana-oauth.env grafana/grafana
+
+grafana-oauth.env
+
+GF_AUTH_GENERIC_OAUTH_ENABLED=true
+GF_AUTH_GENERIC_OAUTH_NAME=Google
+GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
+GF_AUTH_GENERIC_OAUTH_CLIENT_ID=1061260037866-3dbm30pl2su997c8tfgfvok58qv2eg5m.apps.googleusercontent.com
+GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=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
+GF_AUTH_GENERIC_OAUTH_SCOPES="https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email" \
+GF_AUTH_GENERIC_OAUTH_AUTH_URL=https://accounts.google.com/o/oauth2/auth
+GF_AUTH_GENERIC_OAUTH_TOKEN_URL=https://oauth2.googleapis.com/token
+GF_AUTH_GENERIC_OAUTH_API_URL=https://www.googleapis.com/oauth2/v1/userinfo
+GF_AUTH_GENERIC_OAUTH_REDIRECT_URI=<Grafana URL>/login/google
